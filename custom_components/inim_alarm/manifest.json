@@ -1,12 +1,16 @@
 {
   "domain": "inim_alarm",
   "name": "INIM Alarm",
-  "codeowners": ["@pla10"],
+  "codeowners": [
+    "@pla10"
+  ],
   "config_flow": true,
   "dependencies": [],
   "documentation": "https://github.com/pla10/homeassistant_inim_alarm",
   "iot_class": "cloud_push",
   "issue_tracker": "https://github.com/pla10/homeassistant_inim_alarm/issues",
-  "requirements": ["aiohttp>=3.8.0"],
-  "version": "2.4.0"
+  "requirements": [
+    "aiohttp>=3.8.0"
+  ],
+  "version": "2.4.1"
 }
