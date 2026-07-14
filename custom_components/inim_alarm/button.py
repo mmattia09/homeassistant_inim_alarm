@@ -13,7 +13,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .api import InimApi, InimApiError
-from .const import DOMAIN, MANUFACTURER
+from .const import CONF_USER_CODE, DOMAIN, MANUFACTURER, ZONE_TYPE_OUTPUT
 from .coordinator import InimDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -28,18 +28,19 @@ async def async_setup_entry(
     data = hass.data[DOMAIN][entry.entry_id]
     coordinator: InimDataUpdateCoordinator = data["coordinator"]
     api: InimApi = data["api"]
+    options: dict = data.get("options", {})
 
     entities = []
-    
+
     for device in coordinator.devices:
         device_id = device.get("device_id")
         scenarios = device.get("scenarios", [])
-        
+
         if device_id and scenarios:
             for scenario in scenarios:
                 scenario_id = scenario.get("ScenarioId")
                 scenario_name = scenario.get("Name")
-                
+
                 if scenario_id is not None and scenario_name:
                     entities.append(
                         InimScenarioButton(
@@ -50,6 +51,26 @@ async def async_setup_entry(
                             scenario_name=scenario_name,
                         )
                     )
+
+        # Command outputs (Type 4 zones, e.g. a light on a step relay).
+        # These are momentary pulses (toggle), so they are exposed as buttons.
+        zones = device.get("zones", []) if device_id else []
+        for zone in zones:
+            if zone.get("Type") != ZONE_TYPE_OUTPUT:
+                continue
+            zone_id = zone.get("ZoneId")
+            zone_name = zone.get("Name")
+            if zone_id is not None and zone_name:
+                entities.append(
+                    InimOutputButton(
+                        coordinator=coordinator,
+                        api=api,
+                        device_id=device_id,
+                        zone_id=zone_id,
+                        zone_name=zone_name,
+                        options=options,
+                    )
+                )
 
     async_add_entities(entities)
 
@@ -141,4 +162,92 @@ class InimScenarioButton(
             await self.coordinator.async_request_refresh()
         except InimApiError as err:
             _LOGGER.error("Failed to activate scenario %s: %s", self._scenario_name, err)
+            raise
+
+
+class InimOutputButton(
+    CoordinatorEntity[InimDataUpdateCoordinator], ButtonEntity
+):
+    """Representation of an INIM command output (Type 4 zone).
+
+    Modelled as a button because the output is a momentary pulse driving a
+    step relay (toggle): each press sends one pulse and the panel exposes no
+    reliable on/off state.
+    """
+
+    _attr_has_entity_name = True
+    _attr_icon = "mdi:lightbulb"
+
+    def __init__(
+        self,
+        coordinator: InimDataUpdateCoordinator,
+        api: InimApi,
+        device_id: int,
+        zone_id: int,
+        zone_name: str,
+        options: dict | None = None,
+    ) -> None:
+        """Initialize the output button."""
+        super().__init__(coordinator)
+        self._api = api
+        self._device_id = device_id
+        self._zone_id = zone_id
+        self._zone_name = zone_name
+        self._options = options or {}
+
+        self._attr_unique_id = f"{device_id}_output_{zone_id}"
+        self._attr_name = zone_name
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return device info."""
+        device = self.coordinator.get_device(self._device_id)
+        if not device:
+            return DeviceInfo(
+                identifiers={(DOMAIN, str(self._device_id))},
+                manufacturer=MANUFACTURER,
+            )
+
+        return DeviceInfo(
+            identifiers={(DOMAIN, str(self._device_id))},
+            manufacturer=MANUFACTURER,
+            model=device.get("model"),
+            name=device.get("name", "INIM Alarm"),
+            sw_version=device.get("firmware"),
+            serial_number=device.get("serial_number"),
+        )
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return extra state attributes."""
+        return {
+            "zone_id": self._zone_id,
+            "zone_name": self._zone_name,
+        }
+
+    async def async_press(self) -> None:
+        """Handle the button press - pulse the output (toggle)."""
+        user_code = self._options.get(CONF_USER_CODE, "")
+
+        if not user_code:
+            _LOGGER.error(
+                "Cannot toggle output '%s': No user code configured. "
+                "Set it in integration options.",
+                self._zone_name,
+            )
+            return
+
+        _LOGGER.info(
+            "Pulsing output '%s' (zone %s) on device %s",
+            self._zone_name,
+            self._zone_id,
+            self._device_id,
+        )
+
+        try:
+            await self._api.activate_output(
+                self._device_id, self._zone_id, user_code
+            )
+        except InimApiError as err:
+            _LOGGER.error("Failed to toggle output %s: %s", self._zone_name, err)
             raise

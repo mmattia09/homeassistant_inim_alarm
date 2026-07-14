@@ -48,6 +48,9 @@ METHOD_INSERT_ZONE = "InsertZone"
 # Default values
 DEFAULT_SCAN_INTERVAL = timedelta(seconds=30)
 DEFAULT_CLIENT_NAME = "HomeAssistant"
+# INIM zone types. Type 4 = command/output terminal (e.g. a light on a relay),
+# controllable by the user via a momentary pulse.
+ZONE_TYPE_OUTPUT = 4
 # INIM Cloud brand id. "0" = INIM Home; resellers use their own id
 # (e.g. "1" for Sicurit Cloud Combimax Evolution).
 DEFAULT_BRAND = "1"

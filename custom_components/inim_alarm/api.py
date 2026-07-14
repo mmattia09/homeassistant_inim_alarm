@@ -297,6 +297,44 @@ class InimApi:
             await self._request(request_data)
             return True
 
+    async def activate_output(
+        self, device_id: int, zone_id: int, user_code: str
+    ) -> bool:
+        """Pulse a command output (Type 4 zone), e.g. a light on a step relay.
+
+        The panel output is momentary: one call = one pulse that toggles the
+        external relay. The panel does not expose a reliable on/off state, so
+        this is modelled as a stateless action (a button press).
+        """
+        await self._ensure_authenticated()
+
+        request_data = {
+            "Node": "inimhome",
+            "Name": "it.inim.inimutenti",
+            "ClientIP": "",
+            "Method": METHOD_INSERT_ZONE,
+            "Token": self._token,
+            "ClientId": self._client_id,
+            "Params": {
+                "ZoneId": zone_id,
+                "Mode": 0,
+                "DeviceId": str(device_id),
+                "Code": user_code,
+                "Value": 1,
+            },
+        }
+
+        try:
+            await self._request(request_data)
+            _LOGGER.info("Pulsed output zone %s on device %s", zone_id, device_id)
+            return True
+        except InimAuthError:
+            # Token expired, re-authenticate and retry
+            await self.authenticate()
+            request_data["Token"] = self._token
+            await self._request(request_data)
+            return True
+
     async def insert_areas(
         self, device_id: int, area_ids: list[int], user_code: str, arm: bool = True
     ) -> bool:
