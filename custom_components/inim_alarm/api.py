@@ -16,6 +16,7 @@ from .const import (
     API_HEADERS,
     BYPASS_MODE_BYPASS,
     BYPASS_MODE_NORMAL,
+    DEFAULT_BRAND,
     DEFAULT_CLIENT_NAME,
     METHOD_ACTIVATE_SCENARIO,
     METHOD_GET_DEVICES_EXTENDED,
@@ -48,10 +49,12 @@ class InimApi:
         username: str,
         password: str,
         session: aiohttp.ClientSession | None = None,
+        brand: str = DEFAULT_BRAND,
     ) -> None:
         """Initialize the API client."""
         self._username = username
         self._password = password
+        self._brand = str(brand)
         self._session = session
         self._own_session = session is None
         self._token: str | None = None
@@ -130,7 +133,7 @@ class InimApi:
                 "ClientName": DEFAULT_CLIENT_NAME,
                 "ClientInfo": client_info,
                 "Role": "1",
-                "Brand": "0",
+                "Brand": self._brand,
             },
         }
         
@@ -354,6 +357,11 @@ class InimApi:
     def client_id(self) -> str:
         """Return the client ID."""
         return self._client_id
+
+    @property
+    def brand(self) -> str:
+        """Return the configured INIM Cloud brand id."""
+        return self._brand
 
     async def get_session(self) -> aiohttp.ClientSession:
         """Get the aiohttp session (public, used by WebSocket client)."""

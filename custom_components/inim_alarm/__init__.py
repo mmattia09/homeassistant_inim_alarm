@@ -24,12 +24,14 @@ from .const import (
     CONF_ARM_AWAY_SCENARIO,
     CONF_ARM_HOME_SCENARIO,
     CONF_AWAY_ONLY_AREAS,
+    CONF_BRAND,
     CONF_DISARM_SCENARIO,
     CONF_ENABLE_SIA,
     CONF_SCAN_INTERVAL,
     CONF_SIA_ACCOUNT,
     CONF_SIA_PORT,
     CONF_USER_CODE,
+    DEFAULT_BRAND,
     DEFAULT_SIA_PORT,
     DOMAIN,
     PLATFORMS,
@@ -56,6 +58,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         username=entry.data[CONF_USERNAME],
         password=entry.data[CONF_PASSWORD],
         session=session,
+        brand=entry.data.get(CONF_BRAND, DEFAULT_BRAND),
     )
 
     try:

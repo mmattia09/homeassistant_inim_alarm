@@ -7,12 +7,14 @@
         "data": {
           "username": "Email",
           "password": "Password",
-          "user_code": "User Code"
+          "user_code": "User Code",
+          "brand": "Brand"
         },
         "data_description": {
           "username": "Your INIM Cloud email address",
           "password": "Your INIM Cloud password",
-          "user_code": "Alarm user code (e.g., 01234). Required for arm/disarm and bypass."
+          "user_code": "Alarm user code (e.g., 01234). Required for arm/disarm and bypass.",
+          "brand": "INIM Cloud brand: \"0\" = INIM Home, \"1\" = Sicurit Combimax Evolution"
         }
       },
       "reauth_confirm": {

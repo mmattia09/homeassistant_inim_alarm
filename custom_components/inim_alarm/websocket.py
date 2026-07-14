@@ -69,7 +69,7 @@ class InimWebSocketClient:
             "Token": self._api.token,
             "ClientId": self._api.client_id,
             "Context": None,
-            "Params": {"Brand": 0},
+            "Params": {"Brand": int(self._api.brand)},
         }
 
         req_json = json.dumps(req_data, separators=(",", ":"))

@@ -7,6 +7,7 @@ DOMAIN = "inim_alarm"
 # Configuration
 CONF_USERNAME = "username"
 CONF_PASSWORD = "password"
+CONF_BRAND = "brand"
 CONF_SCAN_INTERVAL = "scan_interval"
 # Optional scenario mapping for the main panel. When set, the corresponding
 # arm/disarm action activates that panel scenario instead of arming every area
@@ -47,6 +48,9 @@ METHOD_INSERT_ZONE = "InsertZone"
 # Default values
 DEFAULT_SCAN_INTERVAL = timedelta(seconds=30)
 DEFAULT_CLIENT_NAME = "HomeAssistant"
+# INIM Cloud brand id. "0" = INIM Home; resellers use their own id
+# (e.g. "1" for Sicurit Cloud Combimax Evolution).
+DEFAULT_BRAND = "1"
 
 # Zone Status (from API, subtract 1 for binary state)
 ZONE_STATUS_CLOSED = 1  # After -1 = 0 (False/Closed)

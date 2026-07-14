@@ -23,6 +23,7 @@ from .const import (
     CONF_ARM_AWAY_SCENARIO,
     CONF_ARM_HOME_SCENARIO,
     CONF_AWAY_ONLY_AREAS,
+    CONF_BRAND,
     CONF_DISARM_SCENARIO,
     CONF_ENABLE_SIA,
     CONF_SCAN_INTERVAL,
@@ -30,6 +31,7 @@ from .const import (
     CONF_SIA_PORT,
     CONF_REMOVE_AREA_SCENARIO_MAPPING,
     CONF_USER_CODE,
+    DEFAULT_BRAND,
     DEFAULT_SIA_PORT,
     DOMAIN,
 )
@@ -42,6 +44,8 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
         vol.Required(CONF_USERNAME): str,
         vol.Required(CONF_PASSWORD): str,
         vol.Required(CONF_USER_CODE): str,  # Required for bypass/area control
+        # INIM Cloud brand id: "0" = INIM Home, "1" = Sicurit Combimax Evolution
+        vol.Required(CONF_BRAND, default=DEFAULT_BRAND): str,
     }
 )
 
@@ -53,6 +57,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
         username=data[CONF_USERNAME],
         password=data[CONF_PASSWORD],
         session=session,
+        brand=data.get(CONF_BRAND, DEFAULT_BRAND),
     )
 
     try:
@@ -143,6 +148,7 @@ class InimAlarmConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     {
                         CONF_USERNAME: reauth_entry.data[CONF_USERNAME],
                         CONF_PASSWORD: user_input[CONF_PASSWORD],
+                        CONF_BRAND: reauth_entry.data.get(CONF_BRAND, DEFAULT_BRAND),
                     },
                 )
             except CannotConnect:
