@@ -1,12 +1,14 @@
 # INIM Alarm Integration for Home Assistant
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
-[![GitHub Release](https://img.shields.io/github/release/pla10/homeassistant_inim_alarm.svg)](https://github.com/pla10/homeassistant_inim_alarm/releases)
+[![GitHub Release](https://img.shields.io/github/release/mmattia09/homeassistant_inim_alarm.svg)](https://github.com/mmattia09/homeassistant_inim_alarm/releases)
 [![License](https://img.shields.io/github/license/pla10/homeassistant_inim_alarm.svg)](LICENSE)
 
 [![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=inim_alarm)
 
 A Home Assistant custom integration for INIM alarm systems (SmartLiving, Prime, etc.) via INIM Cloud, with optional local real-time updates.
+
+> **This fork** ([mmattia09](https://github.com/mmattia09/homeassistant_inim_alarm)) adds support for INIM Cloud resellers by making the **brand configurable**, and exposes **command outputs** (e.g. a light on a step relay) as buttons. It is tested against **Sicurit Cloud Combimax Evolution** (INIM-based, `ModelFamily "CE"`). See [Fork changes](#-fork-changes).
 
 ## ✨ Features
 
@@ -26,6 +28,8 @@ A Home Assistant custom integration for INIM alarm systems (SmartLiving, Prime, 
 - 🌡️ **Temperature Sensors** - Monitor JOY MAX keyboard temperatures
 - ⚠️ **Fault Sensors** - Monitor system faults
 - 🎬 **Scenario Buttons** - Quick buttons to activate any scenario (disabled by default for security)
+- 💡 **Command Output Buttons** - Toggle command outputs (Type 4 zones), e.g. a light on a step relay — one press = one pulse
+- 🏷️ **Configurable Brand** - Works with INIM Cloud resellers (e.g. Sicurit Combimax), not only Inim Home
 - ⚙️ **Configurable Options** - Customize polling interval and SIA-IP settings
 - 🔄 **Automatic token refresh** - Handles token expiration automatically
 - 🌍 **Multi-language** - English and Italian translations
@@ -50,12 +54,13 @@ This integration works with INIM alarm panels connected to INIM Cloud:
 
 - SmartLiving series (515, 1050, 10100, etc.)
 - Prime series
-- Other INIM panels compatible with the Inim Home app
+- **Sicurit Cloud Combimax Evolution** (INIM-based, `ModelFamily "CE"`) — use Brand `1`
+- Other INIM panels / resellers compatible with the INIM Cloud app
 
 ## 📦 Prerequisites
 
 1. An INIM alarm system registered on INIM Cloud
-2. The **Inim Home** app credentials (email and password)
+2. Your cloud app credentials — **Inim Home** (brand `0`) or **Sicurit Cloud Combimax Evolution** (brand `1`) — email and password
 3. Your alarm **User Code** (the PIN you use to arm/disarm)
 4. Home Assistant 2024.1.0 or newer
 
@@ -66,7 +71,7 @@ This integration works with INIM alarm panels connected to INIM Cloud:
 1. Open HACS in Home Assistant
 2. Click on "Integrations"
 3. Click the three dots menu (⋮) → "Custom repositories"
-4. Add repository URL: `https://github.com/sadspamxxx/homeassistant_inim_alarm`
+4. Add repository URL: `https://github.com/mmattia09/homeassistant_inim_alarm`
 5. Select category: "Integration" → Click "Add"
 6. Search for "INIM Alarm" and click "Download"
 7. Restart Home Assistant
@@ -86,9 +91,12 @@ This integration works with INIM alarm panels connected to INIM Cloud:
 2. Click **+ Add Integration**
 3. Search for "INIM Alarm"
 4. Enter:
-   - **Email** - Your INIM Cloud email (same as Inim Home app)
+   - **Email** - Your INIM Cloud email (same as the app you use)
    - **Password** - Your INIM Cloud password
    - **User Code** - Your alarm PIN code (required for arm/disarm)
+   - **Brand** - INIM Cloud brand id: `0` for Inim Home, `1` for **Sicurit Cloud Combimax Evolution** (default `1`)
+
+> **Which brand?** The brand selects the INIM Cloud tenant your account lives in. Inim Home accounts use `0`; Sicurit/Combimax accounts use `1`. If login fails with *"Invalid username or password"* despite correct credentials, try the other brand.
 
 ### Options (After Setup)
 
@@ -180,6 +188,13 @@ SIA-IP provides the fastest updates by receiving events directly from the panel 
 > 2. Click on the device
 > 3. Show disabled entities
 > 4. Enable the scenario buttons you need
+
+### Buttons (Command Outputs)
+| Entity | Description |
+|--------|-------------|
+| `button.<name>_<output>` | Toggle a command output (Type 4 zone), e.g. a light |
+
+Command-output zones (INIM zone `Type == 4`) are exposed as **buttons**: each press sends a single pulse (`InsertZone`, `Mode: 0`, `Value: 1`) using your configured **User Code**. This suits outputs wired to a **step/impulse relay** (as commonly used for lights): the pulse toggles the relay, exactly like a physical wall button. Because the panel reports no reliable on/off state for these outputs, they are modelled as stateless buttons rather than switches/lights. These buttons are **enabled by default**.
 
 ## 🔢 Lovelace Keypad
 
@@ -329,6 +344,15 @@ logger:
     custom_components.inim_alarm: debug
 ```
 
+## 🍴 Fork changes
+
+This fork adds, on top of upstream [pla10](https://github.com/pla10/homeassistant_inim_alarm):
+
+- **Configurable brand** (`v2.4.1`) — the login (`RegisterClient`) and WebSocket handshake previously hardcoded brand `0` (Inim Home), which rejects reseller accounts. A **Brand** field (default `1`) makes the integration work with **Sicurit Cloud Combimax Evolution** and other INIM Cloud resellers.
+- **Command-output buttons** (`v2.4.2`) — command outputs (INIM zone `Type == 4`, e.g. a light on a step relay) are exposed as **buttons** that send a single toggle pulse (`InsertZone`, `Mode 0` / `Value 1`) with your user code.
+
+Verified end-to-end against `api.inimcloud.com` with a Sicurit Combimax 1050 (`ModelFamily "CE"`).
+
 ## 🤝 Contributing
 
 Contributions welcome! Please open issues or pull requests.
@@ -347,6 +371,6 @@ MIT License - see [LICENSE](LICENSE)
 ## 👏 Credits
 
 - Original project developed by [Placido Falqueto](https://github.com/pla10)
-- Fork maintained by [@sadspamxxx](https://github.com/sadspamxxx) for local testing and upstream pull requests
+- This fork by [@mmattia09](https://github.com/mmattia09) adds configurable brand (Sicurit Combimax) and command-output buttons
 - Thanks to [@thekoma](https://github.com/thekoma) for WebSocket improvements and SIA-IP concept
 - Thanks to the Home Assistant community
