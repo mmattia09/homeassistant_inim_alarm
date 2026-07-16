@@ -85,10 +85,12 @@ class InimDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     except Exception as err:
                         _LOGGER.debug("RequestPoll failed for device %s: %s", device_id, err)
             
-            # Wait for central to send data to cloud (5 seconds required)
+            # Wait for the panel to report fresh data to the cloud after the
+            # RequestPoll. The panel can take a few seconds to respond, so allow
+            # some margin (a short wait occasionally misses the first cycle).
             if poll_requested:
                 import asyncio
-                await asyncio.sleep(5)
+                await asyncio.sleep(8)
             
             # Now get devices with all data (should have fresh state)
             devices = await self.api.get_devices()

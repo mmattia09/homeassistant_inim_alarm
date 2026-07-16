@@ -163,8 +163,12 @@ class InimApi:
         """Request a poll for updated data."""
         await self._ensure_authenticated()
         
+        # Type 1 forces the cloud to poll the panel for a full state refresh
+        # (scenario, areas and zones) — this is what the mobile app's "refresh"
+        # does. Type 5 is accepted by the API but does NOT trigger a real poll,
+        # leaving HA with a stale cached state until the app is refreshed.
         request_data = {
-            "Params": {"DeviceId": device_id, "Type": 5},
+            "Params": {"DeviceId": device_id, "Type": 1},
             "Node": "",
             "Name": "Home Assistant",
             "ClientIP": "",
